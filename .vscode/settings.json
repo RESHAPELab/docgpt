@@ -1,6 +1,4 @@
 {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
-    "terminal.integrated.env.windows": {"PYTHONPATH": "./",}
+    "editor.defaultFormatter": "ms-python.black-formatter"
 }
