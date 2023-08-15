@@ -1,23 +1,9 @@
-from enum import Enum
-from pydantic import BaseModel, validate_call
-from .helpers import flatten_dict
 import openai
+from pydantic import validate_call
 
-
-class ChatRoles(str, Enum):
-    system = "system"
-    user = "user"
-    assistant = "assistant"
-
-
-class ChatMessage(BaseModel):
-    role: ChatRoles
-    content: str
-
-
-class ChatCompletationProps(BaseModel):
-    model: str = "gpt-3.5-turbo"
-    messages: list[ChatMessage]
+from ..dto.chat import ChatCompletationProps, ChatMessage
+from ..enums.chat import ChatRole
+from ..helpers import flatten_dict
 
 
 class ChatService:
@@ -33,7 +19,7 @@ class ChatService:
 
         messages: list[ChatMessage] = [
             ChatMessage(
-                role=ChatRoles.system,
+                role=ChatRole.system,
                 content="""
                 You are the greatest programmer and programming teacher of all time and you are dedicated to teaching about a project to developers of various seniorities.
                 A lot of information will be given in markdown, so by default interpret it as such.
@@ -45,7 +31,7 @@ class ChatService:
             messages.extend(
                 [
                     ChatMessage(
-                        role=ChatRoles.system,
+                        role=ChatRole.system,
                         content=f"""Topic: {key}
                         Content: {value}""",
                     ),
@@ -57,7 +43,7 @@ class ChatService:
         props = ChatCompletationProps(
             messages=[
                 *self.__context,
-                ChatMessage(role=ChatRoles.user, content=text),
+                ChatMessage(role=ChatRole.user, content=text),
             ]
         )
 

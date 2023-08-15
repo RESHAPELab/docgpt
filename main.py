@@ -1,7 +1,6 @@
-from src.scrapper import ScrapperService
-from src.chat import ChatService
-import pypandoc
+from src.services import ScrapperService, ChatService
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import pypandoc
 
 
 class EnvSetting(BaseSettings):
