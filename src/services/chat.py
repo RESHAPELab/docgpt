@@ -3,20 +3,17 @@ from pydantic import validate_call
 
 from ..dto.chat import ChatCompletationProps, ChatMessage
 from ..enums.chat import ChatRole
-from ..helpers import flatten_dict
 
 
 class ChatService:
     __context: list[ChatMessage]
 
     @validate_call
-    def __init__(self, context: dict, token: str) -> None:
+    def __init__(self, context: list[ChatMessage], token: str) -> None:
         openai.api_key = token
-        self.__context = self.__parse_context_messages(context)
+        self.__context = self._setup_startup_messages(context)
 
-    def __parse_context_messages(self, context: dict) -> list[ChatMessage]:
-        flat_context = flatten_dict(context)
-
+    def _setup_startup_messages(self, context: list[ChatMessage]) -> list[ChatMessage]:
         messages: list[ChatMessage] = [
             ChatMessage(
                 role=ChatRole.system,
@@ -26,17 +23,8 @@ class ChatService:
                 Use only the example information, if you don't know the answer say: "I don't know about that yet". Below you have more informations about:
                 """.strip(),
             )
+            * context
         ]
-        for key, value in flat_context.items():
-            messages.extend(
-                [
-                    ChatMessage(
-                        role=ChatRole.system,
-                        content=f"""Topic: {key}
-                        Content: {value}""",
-                    ),
-                ]
-            )
         return messages
 
     def prompt(self, text: str) -> str:

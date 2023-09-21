@@ -1,14 +1,13 @@
 from collections import OrderedDict
-from typing import List, Literal
+from typing import Literal
 
 import markdown_to_json
 import pypandoc
 import requests
-from pydantic import AnyUrl, validate_call
+from pydantic import AnyUrl, PositiveInt, validate_call
 
 
 class ScrapperService:
-    __suported_formats: List[str] = pypandoc.get_pandoc_formats()[0]
     __target_format: Literal["markdown"] = "markdown"
 
     def __get_extension(self, filepath: str) -> str:
@@ -19,9 +18,6 @@ class ScrapperService:
         content: str,
         content_format: str,
     ) -> OrderedDict:
-        if content_format not in self.__suported_formats:
-            raise Exception(f"{content_format} is not supported by pandoc")
-
         if content_format != self.__target_format:
             content = pypandoc.convert_text(
                 content,
@@ -35,6 +31,8 @@ class ScrapperService:
         self,
         url: AnyUrl,
         content_format: str | None = None,
+        # TODO
+        link_deep: PositiveInt = 0,
     ) -> OrderedDict:
         content = requests.get(url).text
         if not content_format:

@@ -1,0 +1,14 @@
+[
+    {
+        "name": "pandas",
+        "config": [
+            {
+                "target": "https://pandas.pydata.org/docs/dev/_sources/development/contributing.rst.txt",
+                "tags": [
+                    "contributing"
+                ],
+                "format": "rst"
+            }
+        ]
+    }
+]
