@@ -4,7 +4,18 @@ version = "0.1.0"
 description = ""
 authors = ["Morgan C. Nicholson <morgannicholson1371@gmail.com>"]
 readme = "README.md"
-include = ["src"]
+include = [
+    { path="src" }
+]
+
+[tool.mypy]
+python_version = "3.11"
+files="src/**/*.py"
+
+ignore_missing_imports=true
+strict_optional=true
+follow_imports="skip"
+
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -16,11 +27,18 @@ pypandoc = "^1.11"
 openai = "^0.27.8"
 pydantic-settings = "^2.0.2"
 pandas = "^2.0.3"
+antidote = "^2.0.0"
 
 
 [tool.poetry.group.develop.dependencies]
 black = "^23.7.0"
 pytest = "^7.4.0"
+isort = "^5.12.0"
+requests-mock = "^1.11.0"
+faker = "^19.6.2"
+mypy = "^1.5.1"
+types-requests = "^2.31.0.3"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core"]
