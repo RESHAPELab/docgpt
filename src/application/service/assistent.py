@@ -2,7 +2,7 @@ from domain.assistent import Message
 from domain.port.assistent import AssistentPort
 
 
-class AssistentService(AssistentPort):
+class AssistentService:
     _adapter: AssistentPort
 
     def __init__(self, assistent_adapter: AssistentPort) -> None:

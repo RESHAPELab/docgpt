@@ -27,7 +27,7 @@ def content_test_data(content_adapter) -> tuple[str, str]:
             </body>
         </html>
         """
-        output_content = "# Topic\r\n\r\nHello world\r\n"
+        output_content = "Topic\r\n\r\nHello world\r\n"
 
         return input_content, output_content
     else:
