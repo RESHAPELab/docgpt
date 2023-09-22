@@ -8,7 +8,19 @@
 
 from typing import TypeAlias
 
+from pydantic import BaseModel
+
+ContentFormat: TypeAlias = str
 Content: TypeAlias = str
+
+
+class ConvertionOptions(BaseModel):
+    input_format: ContentFormat
+    output_format: ContentFormat
+
+    @property
+    def is_same_format(self) -> bool:
+        return self.input_format == self.output_format
 
 
 # class Scrapper:
