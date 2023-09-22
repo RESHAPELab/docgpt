@@ -1,6 +1,6 @@
 import pypandoc
 import requests
-from pydantic import FileUrl, validate_call
+from pydantic import FileUrl
 
 from domain.content import Content, ConvertionOptions
 from domain.port.content import ContentConverterPort, ContentPort
@@ -13,7 +13,6 @@ class WebPageContentAdapter(ContentPort):
 
 
 class PandocConverterAdapter(ContentConverterPort):
-    @validate_call
     def convert(
         self,
         content: Content,

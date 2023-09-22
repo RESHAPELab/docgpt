@@ -6,6 +6,15 @@ authors = ["Morgan C. Nicholson <morgannicholson1371@gmail.com>"]
 readme = "README.md"
 include = ["src"]
 
+[tool.mypy]
+python_version = "3.11"
+files="src/**/*.py"
+
+ignore_missing_imports=true
+strict_optional=true
+follow_imports="skip"
+
+
 [tool.poetry.dependencies]
 python = "^3.11"
 tiktoken = "^0.4.0"
@@ -25,6 +34,8 @@ pytest = "^7.4.0"
 isort = "^5.12.0"
 requests-mock = "^1.11.0"
 faker = "^19.6.2"
+mypy = "^1.5.1"
+types-requests = "^2.31.0.3"
 
 [build-system]
 requires = ["poetry-core"]
