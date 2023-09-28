@@ -1,16 +1,10 @@
 from typing import Any, Generator, Type
 
-import openai
 import pytest
+from langchain.llms import OpenAI
 
 from src.adapters.assistent import OpenAiAdapater
 from src.domain.port.assistent import AssistentPort
-
-
-class OpenAiDummyChatCompletion(openai.ChatCompletion):
-    @classmethod
-    def create(cls, *args, **kwargs):
-        return {"choices": [{"message": {"content": "fake-content"}}]}
 
 
 @pytest.fixture(params=[OpenAiAdapater])
@@ -21,7 +15,11 @@ def assistent_adapter(
     adapter_type: Type[AssistentPort] = request.param
 
     if adapter_type == OpenAiAdapater:
-        monkeypatch.setattr(openai, "ChatCompletion", OpenAiDummyChatCompletion)
+
+        def dummy_predict(*args, **kwargs):
+            return "fake-content"
+
+        monkeypatch.setattr(OpenAI, "predict", dummy_predict)
         yield OpenAiAdapater("fake-token", [])
         monkeypatch.undo()
     else:
