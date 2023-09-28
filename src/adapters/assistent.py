@@ -10,7 +10,6 @@ Token: TypeAlias = str
 
 
 class OpenAiAdapater(AssistentPort):
-    _model = "gpt-3.5-turbo"
     _llm: OpenAI
     _context: list[BaseMessage] = []
 
