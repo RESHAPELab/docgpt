@@ -336,6 +336,16 @@ files = [
 ]
 
 [[package]]
+name = "chroma"
+version = "0.2.0"
+description = "Color handling made simple."
+optional = false
+python-versions = "*"
+files = [
+    {file = "Chroma-0.2.0.tar.gz", hash = "sha256:e265bcd503e2b35c4448b83257467166c252ecf3ab610492432780691cdfb286"},
+]
+
+[[package]]
 name = "click"
 version = "8.1.6"
 description = "Composable command line interface toolkit"
@@ -1879,4 +1889,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e658e99f6281f819388ecac51ce52a8d493a6dcbbb21190ff0cf9418bff404ba"
+content-hash = "14adf0327d79a02637bf8c854a8d13e7c5ff8137601abf7352b123b1615b798c"

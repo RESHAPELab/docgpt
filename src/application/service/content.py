@@ -45,5 +45,6 @@ class ContentService:
                 output_format=self._output_format,
             )
 
-            content = self._converter_adapter.convert(raw_content, options)
-            yield content
+            content_iter = self._converter_adapter.convert(raw_content, options)
+            for content in content_iter:
+                yield content
