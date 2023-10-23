@@ -28,7 +28,8 @@ pydantic-settings = "^2.0.2"
 pandas = "^2.0.3"
 antidote = "^2.0.0"
 langchain = "^0.0.304"
-chroma = "^0.2.0"
+faiss-cpu = "^1.7.4"
+bs4 = "^0.0.1"
 
 
 [tool.poetry.group.develop.dependencies]

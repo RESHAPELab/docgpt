@@ -11,13 +11,14 @@ from domain.port.content import ContentConverterPort, ContentPort
 class WebPageContentAdapter(ContentPort):
     _max_deep: int
 
-    def __init__(self, max_deep: int = 2) -> None:
+    def __init__(self, *, max_deep: int = 2) -> None:
         self._max_deep = max_deep
 
     def get(self, path: str) -> Iterable[Content]:
         url = FileUrl(path)
         scrapper = RecursiveUrlLoader(url.unicode_string(), max_depth=self._max_deep)
-        for document in scrapper.load():
+        for document in scrapper.lazy_load():
+            print(document.metadata)
             yield document.page_content
 
 

@@ -1,4 +1,8 @@
+import faiss
 import pypandoc
+from langchain.docstore import InMemoryDocstore
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.adapters.assistent import OpenAiAdapater
@@ -18,23 +22,23 @@ if __name__ == "__main__":
 
     settings = EnvSetting()  # type: ignore
 
-    persona_message = """
-    You are the greatest programmer and programming teacher of all time and you are dedicated to teaching about a project to developers of various seniorities.
-    A lot of information will be given in markdown, so by default interpret it as such.
-    Use only the example information, if you don't know the answer say: "I don't know about that yet". Below you have more informations about:
-    """.strip()
-    system_messages = [persona_message]
+    doc_urls = set(["https://docs.qiime2.org/2023.7/"])
 
-    doc_urls = set(["https://docs.qiime2.org/2023.7/about/"])
-
-    content_adapter = WebPageContentAdapter()
+    content_adapter = WebPageContentAdapter(max_deep=2)
     content_converter_adapter = PandocConverterAdapter()
     content_service = ContentService(content_adapter, content_converter_adapter)
 
-    content_iter = content_service.get(doc_urls)
-    system_messages.extend(content_iter)
+    content_iter = list(content_service.get(doc_urls))
 
-    assistent_adapter = OpenAiAdapater(settings.CHAT_SERVICE_TOKEN, system_messages)
+    embedding_size = 1536  # Dimensions of the OpenAIEmbeddings
+    embeddings = OpenAIEmbeddings(openai_api_key=settings.CHAT_SERVICE_TOKEN)
+    vector_index = faiss.IndexFlatL2(embedding_size)
+    vector_storage = FAISS(
+        embeddings.embed_query, vector_index, InMemoryDocstore({}), {}
+    )
+    vector_storage.add_texts(content_iter)
+
+    assistent_adapter = OpenAiAdapater(settings.CHAT_SERVICE_TOKEN, vector_storage)
     assistent = AssistentService(assistent_adapter)
 
     while True:

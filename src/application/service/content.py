@@ -11,7 +11,7 @@ class ContentService:
     _content_adapter: ContentPort
     _converter_adapter: ContentConverterPort
 
-    _output_format = "plain"
+    _output_format = "md"
 
     def __init__(
         self,
