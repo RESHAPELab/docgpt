@@ -1,45 +1,58 @@
 import pypandoc
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dependency_injector.wiring import Provide, inject
+from langchain.text_splitter import Language
+from langchain.vectorstores import PGVector
+from pydantic import AnyUrl
 
-from src.adapters.assistent import OpenAiAdapater
-from src.adapters.content import PandocConverterAdapter, WebPageContentAdapter
-from src.application.service.assistent import AssistentService
-from src.application.service.content import ContentService
+from src.adapters.content.git import GitCodeContentAdapter
+from src.adapters.content.web import WebPageContentAdapter
+from src.core import containers
+from src.domain.port.assistent import AssistentPort
 
 
-class EnvSetting(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+@inject
+def main(
+    chat: AssistentPort = Provide[containers.Application.assistent.conversational],
+):
+    while True:
+        question = input("-> **Q**: ")
+        if question.lower() in ["q", "quit", "exit"]:
+            break
 
-    CHAT_SERVICE_TOKEN: str
+        answer = chat.prompt(question)
+        print(f"**-> Q: {question}\n")
+        print(f"**AI**: {answer}\n")
+
+
+@inject
+def fetch_documents(
+    git: GitCodeContentAdapter = Provide[containers.Application.content.git],
+    web: WebPageContentAdapter = Provide[containers.Application.content.web],
+    storage: PGVector = Provide[containers.Application.storage.vector_storage],
+):
+    project = "jabref"
+    documents = []
+
+    git_content = git.get(
+        project,
+        AnyUrl("https://github.com/JabRef/jabref.git"),
+        {Language.JAVA: [".java"]},
+    )
+    documents.extend(git_content)
+
+    web_content = web.get(project, AnyUrl("https://devdocs.jabref.org/"), max_deep=2)
+    documents.extend(web_content)
+
+    storage.add_documents(documents)
 
 
 if __name__ == "__main__":
     pypandoc.ensure_pandoc_installed()
 
-    settings = EnvSetting()  # type: ignore
+    application = containers.Application()
+    application.config.from_yaml("config.yml")
+    application.core.init_resources()
+    application.wire(modules=[__name__])
 
-    persona_message = """
-    You are the greatest programmer and programming teacher of all time and you are dedicated to teaching about a project to developers of various seniorities.
-    A lot of information will be given in markdown, so by default interpret it as such.
-    Use only the example information, if you don't know the answer say: "I don't know about that yet". Below you have more informations about:
-    """.strip()
-    system_messages = [persona_message]
-
-    doc_urls = set(["https://docs.qiime2.org/2023.7/about/"])
-
-    content_adapter = WebPageContentAdapter()
-    content_converter_adapter = PandocConverterAdapter()
-    content_service = ContentService(content_adapter, content_converter_adapter)
-
-    content_iter = content_service.get(doc_urls)
-    system_messages.extend(content_iter)
-
-    assistent_adapter = OpenAiAdapater(settings.CHAT_SERVICE_TOKEN, system_messages)
-    assistent = AssistentService(assistent_adapter)
-
-    while True:
-        question = input("> ")
-        if question.lower() == "q":
-            break
-        response = assistent.prompt(question)
-        print(response)
+    # fetch_documents()
+    main()

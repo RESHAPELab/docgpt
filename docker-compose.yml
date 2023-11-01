@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  pg:
+    image: ankane/pgvector
+    container_name: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_DB=postgres
+
+    volumes:
+      - .docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d

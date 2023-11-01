@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
+from typing import Iterable
 
-from domain.content import Content, ConvertionOptions
+from src.domain.content import Content, ConvertionOptions
 
 
 class ContentPort(ABC):
     @abstractmethod
-    def get(self, path: str) -> Content:
+    def get(self, project: str, path: str, **kwargs) -> Iterable[Content]:
         ...
 
 
 class ContentConverterPort(ABC):
     @abstractmethod
-    def convert(self, content: Content, options: ConvertionOptions) -> Content:
+    def convert(self, content: str, options: ConvertionOptions) -> str:
         ...
