@@ -6,13 +6,14 @@ from pydantic import AnyUrl
 
 from src.adapters.content.git import GitCodeContentAdapter
 from src.adapters.content.web import WebPageContentAdapter
+from src.app.discord import DiscordClient
 from src.core import containers
 from src.domain.port.assistent import AssistentPort
 
 
 @inject
-def main(
-    chat: AssistentPort = Provide[containers.Application.assistent.conversational],
+def run_terminal(
+    chat: AssistentPort = Provide[containers.Settings.assistent.conversational],
 ):
     while True:
         question = input("-> **Q**: ")
@@ -25,10 +26,18 @@ def main(
 
 
 @inject
+def run_discord(
+    discord: DiscordClient = Provide[containers.Settings.app.discord],
+    token: str = Provide[containers.Settings.app.discord_token],
+):
+    discord.run(token)
+
+
+@inject
 def fetch_documents(
-    git: GitCodeContentAdapter = Provide[containers.Application.content.git],
-    web: WebPageContentAdapter = Provide[containers.Application.content.web],
-    storage: PGVector = Provide[containers.Application.storage.vector_storage],
+    git: GitCodeContentAdapter = Provide[containers.Settings.content.git],
+    web: WebPageContentAdapter = Provide[containers.Settings.content.web],
+    storage: PGVector = Provide[containers.Settings.storage.vector_storage],
 ):
     project = "jabref"
     documents = []
@@ -49,10 +58,11 @@ def fetch_documents(
 if __name__ == "__main__":
     pypandoc.ensure_pandoc_installed()
 
-    application = containers.Application()
+    application = containers.Settings()
     application.config.from_yaml("config.yml")
     application.core.init_resources()
     application.wire(modules=[__name__])
 
     # fetch_documents()
-    main()
+    # run_terminal()
+    run_discord()

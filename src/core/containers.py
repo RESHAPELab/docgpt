@@ -1,5 +1,7 @@
 import logging.config
+from re import M
 
+import discord
 from dependency_injector import containers, providers
 from dependency_injector.providers import Singleton
 from langchain.chat_models import ChatOpenAI
@@ -16,6 +18,7 @@ from src.adapters.content import (
     PandocConverterAdapter,
     WebPageContentAdapter,
 )
+from src.app.discord import DiscordClient
 from src.domain.port.assistent import AssistentPort
 from src.domain.port.content import ContentConverterPort, ContentPort
 
@@ -92,7 +95,19 @@ class AssistentAdapters(containers.DeclarativeContainer):
     )
 
 
-class Application(containers.DeclarativeContainer):
+class Apps(containers.DeclarativeContainer):
+    config = providers.Configuration()
+    assistent = providers.DependenciesContainer()
+
+    discord_token = config.discord.token
+    discord: Singleton[DiscordClient] = Singleton(
+        DiscordClient,
+        intents=discord.Intents.default(),
+        assistent=assistent.conversational,
+    )
+
+
+class Settings(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     core = providers.Container(Core, config=config.core)
@@ -105,3 +120,4 @@ class Application(containers.DeclarativeContainer):
         ai=ai,
         storage=storage,
     )
+    app = providers.Container(Apps, config=config.app, assistent=assistent)
