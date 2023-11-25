@@ -1,12 +1,14 @@
 import logging.config
 
+import discord
 from dependency_injector import containers, providers
 from dependency_injector.providers import Singleton
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.memory import ConversationSummaryMemory
+from langchain.memory import ConversationBufferMemory, MongoDBChatMessageHistory
 from langchain.memory.chat_memory import BaseChatMemory
+from langchain.schema import BaseChatMessageHistory
 from langchain.schema.embeddings import Embeddings
 from langchain.vectorstores import PGVector, VectorStore
 
@@ -36,6 +38,7 @@ class AI(containers.DeclarativeContainer):
         ChatOpenAI,
         model_name=config.openai.model_name,
         openai_api_key=config.openai.api_key,
+        verbose=True,
     )
 
     embeddings: Singleton[Embeddings] = Singleton(
@@ -45,13 +48,6 @@ class AI(containers.DeclarativeContainer):
         openai_api_base=config.openai.api_base,
         disallowed_special=[],
         show_progress_bar=True,
-    )
-
-    memory: Singleton[BaseChatMemory] = Singleton(
-        ConversationSummaryMemory,
-        llm=llm,
-        memory_key="chat_history",
-        return_messages=True,
     )
 
 
@@ -66,6 +62,11 @@ class StorageAdapters(containers.DeclarativeContainer):
         pre_delete_collection=config.vector.pre_delete_collection,
     )
 
+    memory_factory: providers.Factory[BaseChatMessageHistory] = providers.Factory(
+        MongoDBChatMessageHistory,
+        connection_string=config.memory.url,
+    )
+
 
 class ContentAdapters(containers.DeclarativeContainer):
     config = providers.Configuration()
@@ -75,33 +76,47 @@ class ContentAdapters(containers.DeclarativeContainer):
     web: Singleton[ContentPort] = Singleton(WebPageContentAdapter, converter)
 
 
-class AssistentAdapters(containers.DeclarativeContainer):
+class AssistantAdapters(containers.DeclarativeContainer):
     config = providers.Configuration()
     ai = providers.DependenciesContainer()
     storage = providers.DependenciesContainer()
 
-    conversational: Singleton[AssistentPort] = Singleton(
+    memory: providers.Factory[BaseChatMemory] = providers.Factory(
+        ConversationBufferMemory,
+        chat_memory=storage.memory_factory,
+        memory_key="chat_history",
+    )
+
+    chat: Singleton[AssistentPort] = Singleton(
         ConversationalAssistentAdapter,
         llm=ai.llm,
         storage=storage.vector_storage,
-        memory=ai.memory,
+        memory_factory=memory.provider,
         k=config.k,
-        tokens_limit=config.tokens_limit,
+        tokens_limit=config.tokens_limit.as_int(),
         score_threshold=config.score_threshold,
         distance_threshold=config.distance_threshold,
     )
 
 
-class Application(containers.DeclarativeContainer):
+class Apps(containers.DeclarativeContainer):
+    config = providers.Configuration()
+    assistent = providers.DependenciesContainer()
+
+    discord_token = config.discord.token
+
+
+class Settings(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     core = providers.Container(Core, config=config.core)
     ai = providers.Container(AI, config=config.ai)
     storage = providers.Container(StorageAdapters, config=config.storage, ai=ai)
     content = providers.Container(ContentAdapters, config=config.content)
-    assistent = providers.Container(
-        AssistentAdapters,
+    assistant = providers.Container(
+        AssistantAdapters,
         config=config.assistent,
         ai=ai,
         storage=storage,
     )
+    app = providers.Container(Apps, config=config.app, assistent=assistant)

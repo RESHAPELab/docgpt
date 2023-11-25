@@ -29,3 +29,10 @@ storage:
     vector:
       url: "postgresql://root:example@localhost:5432/postgres"
       pre_delete_collection: false
+    memory:
+      url: "mongodb://root:example@localhost:27017/"
+
+app:
+  discord:
+    token: ""
+    
