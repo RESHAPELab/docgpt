@@ -90,10 +90,11 @@ async def on_message(
     channel = message.channel
     log = logging.getLogger("on_message")
 
-    if message.author == user or message.type != discord.MessageType.default:
-        return
-    if not isinstance(channel, discord.Thread):
-        log.error("channel must be a thread")
+    if (
+        message.author == user
+        or message.type != discord.MessageType.default
+        or not isinstance(channel, discord.Thread)
+    ):
         return
 
     # Note: for some reason message comes empty from "message" var
