@@ -1,36 +1,37 @@
 import pypandoc
 from dependency_injector.wiring import Provide, inject
+from langchain.globals import set_debug, set_verbose
 from langchain.text_splitter import Language
 from langchain.vectorstores import PGVector
 from pydantic import AnyUrl
 
 from src.adapters.content.git import GitCodeContentAdapter
 from src.adapters.content.web import WebPageContentAdapter
-from src.app.discord import DiscordClient
+from src.app.discord import BOT
 from src.core import containers
 from src.domain.port.assistent import AssistentPort
 
 
 @inject
 def run_terminal(
-    chat: AssistentPort = Provide[containers.Settings.assistent.conversational],
+    chat: AssistentPort = Provide[containers.Settings.assistant.chat],
 ):
     while True:
         question = input("-> **Q**: ")
         if question.lower() in ["q", "quit", "exit"]:
             break
 
-        answer = chat.prompt(question)
+        answer = chat.prompt(question, session_id="cli")
         print(f"**-> Q: {question}\n")
         print(f"**AI**: {answer}\n")
 
 
 @inject
 def run_discord(
-    discord: DiscordClient = Provide[containers.Settings.app.discord],
+    *,
     token: str = Provide[containers.Settings.app.discord_token],
 ):
-    discord.run(token)
+    BOT.run(token)
 
 
 @inject
@@ -61,7 +62,9 @@ if __name__ == "__main__":
     application = containers.Settings()
     application.config.from_yaml("config.yml")
     application.core.init_resources()
-    application.wire(modules=[__name__])
+    application.wire(modules=[__name__, "src.app.discord"])
+    set_debug(True)
+    set_verbose(True)
 
     # fetch_documents()
     # run_terminal()

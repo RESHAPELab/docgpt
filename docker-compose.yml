@@ -1,9 +1,9 @@
 version: '3'
 
 services:
-  pg:
+  vector_storage:
     image: ankane/pgvector
-    container_name: postgres
+    container_name: vector_storage
     restart: always
     ports:
       - 5432:5432
@@ -14,3 +14,13 @@ services:
 
     volumes:
       - .docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+
+  memory_storage:
+    image: mongo
+    container_name: memory_storage
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
