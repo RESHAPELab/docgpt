@@ -88,7 +88,6 @@ async def on_message(
 ):
     user = BOT.user
     channel = message.channel
-    log = logging.getLogger("on_message")
 
     if (
         message.author == user
