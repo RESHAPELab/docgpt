@@ -6,7 +6,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.vectorstores import VectorStore
 
-from core.prompts import DEFAULT_PROMPT
+from src.core.prompts import DEFAULT_PROMPT
 from src.domain.assistent import Message, SessionId
 from src.domain.port.assistent import AssistentPort
 
