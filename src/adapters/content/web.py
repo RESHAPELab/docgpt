@@ -2,6 +2,8 @@ from typing import Iterable
 
 from langchain.document_loaders import RecursiveUrlLoader
 from pydantic import AnyUrl
+from sqlalchemy import desc
+from tqdm import tqdm
 
 from src.domain.content import Content
 from src.domain.port.content import ContentConverterPort, ContentPort, ConvertionOptions
@@ -22,7 +24,13 @@ class WebPageContentAdapter(ContentPort):
     ) -> Iterable[Content]:
         url = path.unicode_string()
         scrapper = RecursiveUrlLoader(url, max_deep)
-        for document in scrapper.load_and_split():
+        docs_iter = tqdm(
+            scrapper.load_and_split(),
+            desc="Scrapping pages",
+            unit=" pages",
+        )
+
+        for document in docs_iter:
             document.page_content = self._converter.convert(
                 document.page_content,
                 self._convertion_options,

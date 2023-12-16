@@ -114,7 +114,7 @@ class _GitLoader(BaseGitLoader):
             repo = Repo(self.repo_path)
             repo.git.checkout(self.branch)
 
-        iter_tree = tqdm(self._iter_tree(repo), desc="Processing files", unit="file")
+        iter_tree = tqdm(self._iter_tree(repo), desc="Processing files", unit=" files")
 
         with mp.Pool(processes=mp.cpu_count()) as pool:
             result_iter = pool.imap_unordered(
