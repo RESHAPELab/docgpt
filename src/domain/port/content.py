@@ -6,7 +6,14 @@ from src.domain.content import Content, ConvertionOptions
 
 class ContentPort(ABC):
     @abstractmethod
-    def get(self, project: str, path: str, **kwargs) -> Iterable[Content]:
+    def get(
+        self,
+        project: str,
+        *,
+        url: str | None = None,
+        path: str | None = None,
+        clear_before: bool = False,
+    ) -> Iterable[Content]:
         ...
 
 

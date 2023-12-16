@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pypandoc
 from dependency_injector.wiring import Provide, inject
 from langchain.globals import set_debug, set_verbose
@@ -40,18 +42,25 @@ def fetch_documents(
     web: WebPageContentAdapter = Provide[containers.Settings.content.web],
     storage: PGVector = Provide[containers.Settings.storage.vector_storage],
 ):
-    project = "jabref"
+    project = "firefox"
     documents = []
 
-    git_content = git.get(
-        project,
-        AnyUrl("https://github.com/JabRef/jabref.git"),
-        {Language.JAVA: [".java"]},
-    )
-    documents.extend(git_content)
+    git_params: dict = {}
+    repo_path = Path(".assets") / "gecko-dev"
+    if repo_path.exists():
+        git_params["path"] = repo_path
+    else:
+        git_params["url"] = "ssh://git@github.com/mozilla/gecko-dev.git"
 
-    web_content = web.get(project, AnyUrl("https://devdocs.jabref.org/"), max_deep=2)
-    documents.extend(web_content)
+    documents.extend(git.get(project, "master", **git_params))
+
+    documents.extend(
+        web.get(
+            project,
+            AnyUrl("https://firefox-source-docs.mozilla.org/index.html"),
+            max_deep=3,
+        )
+    )
 
     storage.add_documents(documents)
 
@@ -66,6 +75,6 @@ if __name__ == "__main__":
     set_debug(True)
     set_verbose(True)
 
-    # fetch_documents()
+    fetch_documents()
     # run_terminal()
     run_discord()

@@ -33,6 +33,7 @@ dependency-injector = "^4.41.0"
 gitpython = "^3.1.40"
 pymongo = "^4.6.0"
 py-cord = "^2.4.1"
+tqdm = "^4.66.1"
 
 
 [tool.poetry.group.develop.dependencies]

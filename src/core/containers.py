@@ -1,8 +1,7 @@
 import logging.config
 
-import discord
 from dependency_injector import containers, providers
-from dependency_injector.providers import Singleton
+from dependency_injector.providers import Factory, Singleton
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.embeddings import OpenAIEmbeddings
@@ -10,11 +9,13 @@ from langchain.memory import ConversationBufferMemory, MongoDBChatMessageHistory
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseChatMessageHistory
 from langchain.schema.embeddings import Embeddings
+from langchain.text_splitter import TextSplitter
 from langchain.vectorstores import PGVector, VectorStore
 
 from src.adapters.assistent import ConversationalAssistentAdapter
 from src.adapters.content import (
     GitCodeContentAdapter,
+    LangSplitterByMetadata,
     PandocConverterAdapter,
     WebPageContentAdapter,
 )
@@ -72,7 +73,12 @@ class ContentAdapters(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     converter: Singleton[ContentConverterPort] = Singleton(PandocConverterAdapter)
-    git: Singleton[ContentPort] = Singleton(GitCodeContentAdapter)
+    splitter_factory: Factory[LangSplitterByMetadata] = Factory(LangSplitterByMetadata)
+
+    git_splitter: Singleton[TextSplitter] = Singleton(splitter_factory, "file_name")
+    git: Singleton[ContentPort] = Singleton(
+        GitCodeContentAdapter, splitter=git_splitter
+    )
     web: Singleton[ContentPort] = Singleton(WebPageContentAdapter, converter)
 
 
