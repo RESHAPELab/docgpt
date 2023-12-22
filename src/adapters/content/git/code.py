@@ -1,19 +1,20 @@
 import multiprocessing as mp
 import os
 from pathlib import Path
-from typing import Callable, Iterator, TypeAlias
+from typing import AnyStr, Callable, Iterable, Iterator, TypeAlias
 
 from git import Repo
 from git.objects import Blob, Submodule, Tree
-from git.types import PathLike
 from langchain.docstore.document import Document
 from langchain.document_loaders.git import GitLoader as BaseGitLoader
 from langchain.text_splitter import TextSplitter
-from sqlalchemy import Pool
+from pydantic import AnyUrl, validate_call
 from tqdm import tqdm
 
 from src.domain.content import Content
 from src.domain.port.content import ContentPort
+
+__all__ = ("GitCodeContentAdapter",)
 
 _IndexObjUnion: TypeAlias = Tree | Blob | Submodule
 _TraversedTreeTup: TypeAlias = (
@@ -52,7 +53,7 @@ class _GitLoader(BaseGitLoader):
         try:
             with open(file_path, "rb") as f:
                 content = f.read()
-                file_type = os.path.splitext(item.name)[1]
+                # file_type = os.path.splitext(item.name)[1]
 
                 # loads only text files
                 try:
@@ -64,7 +65,7 @@ class _GitLoader(BaseGitLoader):
                     "source": rel_file_path,
                     "file_path": rel_file_path,
                     "file_name": item.name,
-                    "file_type": file_type,
+                    # "file_type": file_type,
                 }
                 doc = Document(page_content=text_content, metadata=metadata)
                 return doc
@@ -126,37 +127,70 @@ class _GitLoader(BaseGitLoader):
 
 
 class GitCodeContentAdapter(ContentPort):
-    def __init__(self, splitter: TextSplitter) -> None:
+    def __init__(self, splitter: TextSplitter, assets_path: Path) -> None:
         self._splitter = splitter
+        self._assets_path = assets_path
 
-    def get(
+    def _get_documents(
         self,
         project: str,
-        branch: str = "main",
         *,
-        url: str | None = None,
-        path: Path | None = None,
-        clear_before: bool = False,
-    ) -> Iterator[Content]:
-        if path is None and url is not None:
-            repo_name = url.rsplit("/", maxsplit=1)[-1]
-            if repo_name.endswith(".git"):
-                repo_name = repo_name[:-4]
-            path = Path(".assets").joinpath(repo_name)
+        repo_path: Path,
+        clone_url: AnyUrl | None = None,
+        branch: str | None = "main",
+        file_filter: Callable[[str], bool] | None = None,
+    ) -> Iterable[Content]:
+        loader = _GitLoader(
+            repo_path.absolute().as_posix(),
+            clone_url.unicode_string() if clone_url else None,
+            branch,
+            file_filter,
+        )
 
-        if path is None:
-            raise ValueError("Path or url is required")
-
-        if path.exists() and clear_before:
-            path.rmdir()
-        path.mkdir(parents=True, exist_ok=True)
-
-        loader = _GitLoader(path.absolute().as_posix(), url, branch)
         documents = loader.load_and_split(self._splitter)
 
         for document in documents:
             yield Content.from_document(
                 document,
-                source=path.name,
+                source=repo_path.name,
                 project=project,
             )
+
+    @validate_call
+    def get_by_path(
+        self,
+        project: str,
+        path: Path,
+        *,
+        branch: str = "main",
+    ) -> Iterable[Content]:
+        yield from self._get_documents(
+            project,
+            repo_path=path,
+            branch=branch,
+        )
+
+    @validate_call
+    def get_by_url(
+        self,
+        project: str,
+        url: AnyUrl,
+        *,
+        branch: str = "main",
+    ) -> Iterator[Content]:
+        if not url.path:
+            raise ValueError("Cannot define the repository")
+
+        repo_name = url.path.rsplit("/", maxsplit=1)[-1].lower()
+        if repo_name.endswith(".git"):
+            repo_name = repo_name[:-4]
+
+        path = self._assets_path.joinpath(repo_name)
+        self._clear_folder(path, mkdir=False)
+
+        yield from self._get_documents(
+            project,
+            repo_path=path,
+            clone_url=url,
+            branch=branch,
+        )

@@ -3,15 +3,13 @@ from pathlib import Path
 import pypandoc
 from dependency_injector.wiring import Provide, inject
 from langchain.globals import set_debug, set_verbose
-from langchain.text_splitter import Language
-from langchain.vectorstores import PGVector
-from pydantic import AnyUrl
+from langchain.vectorstores import VectorStore
 
-from src.adapters.content.git import GitCodeContentAdapter
-from src.adapters.content.web import WebPageContentAdapter
 from src.app.discord import BOT
 from src.core import containers
+from src.domain.content import Content
 from src.domain.port.assistent import AssistentPort
+from src.domain.port.content import ContentPort
 
 
 @inject
@@ -37,32 +35,50 @@ def run_discord(
 
 
 @inject
+def add_documents(
+    documents: list[Content],
+    *,
+    storage: VectorStore = Provide[containers.Settings.storage.vector_storage],
+) -> None:
+    fails_count = 0
+
+    for doc in documents:
+        try:
+            storage.add_documents([doc])
+        except (Exception,) as e:
+            fails_count += 1
+            print(f"Fail to add document: {e}")
+
+    if fails_count:
+        print(f"{fails_count} documents failed to add")
+
+
+@inject
 def fetch_documents(
-    git: GitCodeContentAdapter = Provide[containers.Settings.content.git],
-    web: WebPageContentAdapter = Provide[containers.Settings.content.web],
-    storage: PGVector = Provide[containers.Settings.storage.vector_storage],
+    code: ContentPort = Provide[containers.Settings.content.git_code],
+    wiki: ContentPort = Provide[containers.Settings.content.git_wiki],
+    assets_path: Path = Provide[containers.Settings.core.assets_path],
 ):
-    project = "firefox"
-    documents = []
+    project = "pdf.js"
 
-    git_params: dict = {}
-    repo_path = Path(".assets") / "gecko-dev"
-    if repo_path.exists():
-        git_params["path"] = repo_path
+    code_url = f"ssh://git@github.com/mozilla/{project}.git"
+    code_path = assets_path.joinpath(project)
+
+    wiki_url = f"ssh://git@github.com/mozilla/{project}.wiki.git"
+    wiki_path = assets_path.joinpath(project + ".wiki")
+
+    if code_path.exists():
+        code_docs = code.get_by_path(project, code_path, branch="master")
     else:
-        git_params["url"] = "ssh://git@github.com/mozilla/gecko-dev.git"
+        code_docs = code.get_by_url(project, code_url, branch="master")
 
-    documents.extend(git.get(project, "master", **git_params))
+    if wiki_path.exists():
+        wiki_docs = wiki.get_by_path(project, wiki_path)
+    else:
+        wiki_docs = wiki.get_by_url(project, wiki_url)
 
-    documents.extend(
-        web.get(
-            project,
-            AnyUrl("https://firefox-source-docs.mozilla.org/index.html"),
-            max_deep=3,
-        )
-    )
-
-    storage.add_documents(documents)
+    add_documents(wiki_docs)  # type: ignore
+    add_documents(code_docs)  # type: ignore
 
 
 if __name__ == "__main__":
@@ -75,6 +91,6 @@ if __name__ == "__main__":
     set_debug(True)
     set_verbose(True)
 
-    fetch_documents()
+    # fetch_documents()
     # run_terminal()
     run_discord()

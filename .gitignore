@@ -200,3 +200,4 @@ pyrightconfig.json
 config.yml
 .assets/
 !.assets/.gitkeep
+.localstorage
