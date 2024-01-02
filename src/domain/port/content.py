@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
 
-from domain.content import Content, ConvertionOptions
+from src.domain.content import Content, ConvertionOptions
 
 
 class ContentPort(ABC):

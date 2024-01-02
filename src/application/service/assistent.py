@@ -1,5 +1,5 @@
-from domain.assistent import Message
-from domain.port.assistent import AssistentPort
+from src.domain.assistent import Message
+from src.domain.port.assistent import AssistentPort
 
 
 class AssistentService:

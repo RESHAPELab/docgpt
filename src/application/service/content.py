@@ -3,8 +3,8 @@ from typing import Iterable
 
 from pydantic import FilePath, FileUrl, validate_call
 
-from domain.content import Content, ConvertionOptions
-from domain.port.content import ContentConverterPort, ContentPort
+from src.domain.content import Content, ConvertionOptions
+from src.domain.port.content import ContentConverterPort, ContentPort
 
 
 class ContentService:

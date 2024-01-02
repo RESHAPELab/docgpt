@@ -4,8 +4,8 @@ import pypandoc
 from langchain.document_loaders import RecursiveUrlLoader
 from pydantic import FileUrl
 
-from domain.content import Content, ConvertionOptions
-from domain.port.content import ContentConverterPort, ContentPort
+from src.domain.content import Content, ConvertionOptions
+from src.domain.port.content import ContentConverterPort, ContentPort
 
 
 class WebPageContentAdapter(ContentPort):

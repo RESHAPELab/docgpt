@@ -9,9 +9,9 @@ from langchain.schema import BaseMessage
 from langchain.schema.vectorstore import VectorStore
 from pydantic import ConfigDict, confloat, validate_call
 
-from domain.assistent import Message
-from domain.auth import Token
-from domain.port.assistent import AssistentPort
+from src.domain.assistent import Message
+from src.domain.auth import Token
+from src.domain.port.assistent import AssistentPort
 
 Temperature: TypeAlias = confloat(ge=0, lt=1)  # type: ignore
 

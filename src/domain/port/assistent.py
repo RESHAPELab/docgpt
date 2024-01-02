@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from domain.assistent import Message
+from src.domain.assistent import Message
 
 
 class AssistentPort(ABC):
