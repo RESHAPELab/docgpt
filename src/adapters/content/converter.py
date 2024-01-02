@@ -1,7 +1,7 @@
 import pypandoc
 
 from src.domain.content import ConvertionOptions
-from src.domain.port.content import ContentConverterPort
+from src.port.content import ContentConverterPort
 
 
 class PandocConverterAdapter(ContentConverterPort):

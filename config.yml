@@ -1,0 +1,38 @@
+core:
+  logging:
+    version: 1
+    formatters:
+      formatter:
+        format: "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
+    handlers:
+      console:
+        class: "logging.StreamHandler"
+        level: ${LOG_LEVEL:DEBUG}
+        formatter: "formatter"
+        stream: "ext://sys.stderr"
+    root:
+      level: ${LOG_LEVEL:DEBUG}
+      handlers: ["console"]
+
+ai:
+  openai:
+    model_name: ${AI_OPENAI_MODEL:gpt-3.5-turbo}
+    api_key:  ${AI_OPENAI_APIKEY}
+
+assistant:
+  k: ${ASSISTANT_K:100}
+  tokens_limit: ${ASSISTANT_TOKENS_LIMIT:4000}
+  score_threshold: ${ASSISTANT_SCORE_THRESHOLD:0.9}
+  distance_threshold: ${DISTANCE_THRESHOLD:null}
+
+storage:
+    vector:
+      url: ${STORAGE_VECTOR_URL:postgresql://root:example@localhost:5432/postgres}
+      pre_delete_collection: false
+    memory:
+      url: ${STORAGE_MEMORY_URL:mongodb://root:example@localhost:27017}
+
+app:
+  discord:
+    token: ${APP_DISCORD_TOKEN}
+    
