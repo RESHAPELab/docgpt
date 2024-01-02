@@ -24,13 +24,19 @@ pydantic = "^2.1.1"
 markdown-to-json = "^2.1.0"
 pypandoc = "^1.11"
 openai = "^0.27.8"
-pydantic-settings = "^2.0.2"
 pandas = "^2.0.3"
-antidote = "^2.0.0"
-langchain = "^0.0.304"
+langchain = "^0.0.352"
 faiss-cpu = "^1.7.4"
 bs4 = "^0.0.1"
+dependency-injector = "^4.41.0"
+gitpython = "^3.1.40"
+pymongo = "^4.6.0"
+py-cord = "^2.4.1"
+tqdm = "^4.66.1"
+unstructured = {version="^0.11.6", extras=["md"]}
+chromadb = "^0.4.21"
 
+[tool.poetry.extras]
 
 [tool.poetry.group.develop.dependencies]
 black = "^23.7.0"
@@ -41,6 +47,11 @@ faker = "^19.6.2"
 mypy = "^1.5.1"
 types-requests = "^2.31.0.3"
 pytest-cov = "^4.1.0"
+
+
+[tool.poetry.group.postgres.dependencies]
+pgvector = "^0.2.3"
+psycopg2-binary = "^2.9.9"
 
 [build-system]
 requires = ["poetry-core"]

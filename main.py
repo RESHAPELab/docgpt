@@ -1,49 +1,98 @@
-import faiss
+from pathlib import Path
+
 import pypandoc
-from langchain.docstore import InMemoryDocstore
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dependency_injector.wiring import Provide, inject
+from dotenv import load_dotenv
+from langchain.globals import set_debug, set_verbose
+from langchain.vectorstores import VectorStore
 
-from src.adapters.assistent import OpenAiAdapater
-from src.adapters.content import PandocConverterAdapter, WebPageContentAdapter
-from src.application.service.assistent import AssistentService
-from src.application.service.content import ContentService
+from src.app.discord import BOT
+from src.core import containers
+from src.domain.content import Content
+from src.port.assistant import AssistantPort
+from src.port.content import ContentPort
 
 
-class EnvSetting(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+@inject
+def run_terminal(
+    chat: AssistantPort = Provide[containers.Settings.assistant.chat],
+):
+    while True:
+        question = input("-> **Q**: ")
+        if question.lower() in ["q", "quit", "exit"]:
+            break
 
-    CHAT_SERVICE_TOKEN: str
+        answer = chat.prompt(question, session_id="cli")
+        print(f"**-> Q: {question}\n")
+        print(f"**AI**: {answer}\n")
+
+
+@inject
+def run_discord(
+    *,
+    token: str = Provide[containers.Settings.app.discord_token],
+):
+    BOT.run(token)
+
+
+@inject
+def add_documents(
+    documents: list[Content],
+    *,
+    storage: VectorStore = Provide[containers.Settings.storage.vector_storage],
+) -> None:
+    fails_count = 0
+
+    for doc in documents:
+        try:
+            storage.add_documents([doc])
+        except (Exception,) as e:
+            fails_count += 1
+            print(f"Fail to add document: {e}")
+
+    if fails_count:
+        print(f"{fails_count} documents failed to add")
+
+
+@inject
+def fetch_documents(
+    code: ContentPort = Provide[containers.Settings.content.git_code],
+    wiki: ContentPort = Provide[containers.Settings.content.git_wiki],
+    assets_path: Path = Provide[containers.Settings.core.assets_path],
+):
+    project = "pdf.js"
+
+    code_url = f"ssh://git@github.com/mozilla/{project}.git"
+    code_path = assets_path.joinpath(project)
+
+    wiki_url = f"ssh://git@github.com/mozilla/{project}.wiki.git"
+    wiki_path = assets_path.joinpath(project + ".wiki")
+
+    if code_path.exists():
+        code_docs = code.get_by_path(project, code_path, branch="master")
+    else:
+        code_docs = code.get_by_url(project, code_url, branch="master")
+
+    if wiki_path.exists():
+        wiki_docs = wiki.get_by_path(project, wiki_path)
+    else:
+        wiki_docs = wiki.get_by_url(project, wiki_url)
+
+    add_documents(wiki_docs)  # type: ignore
+    add_documents(code_docs)  # type: ignore
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pypandoc.ensure_pandoc_installed()
 
-    settings = EnvSetting()  # type: ignore
+    application = containers.Settings()
+    application.config.from_yaml("config.yml", envs_required=True, required=True)
+    application.core.init_resources()
+    application.wire(modules=[__name__, "src.app.discord"])
+    set_debug(True)
+    set_verbose(True)
 
-    doc_urls = set(["https://docs.qiime2.org/2023.7/"])
-
-    content_adapter = WebPageContentAdapter(max_deep=2)
-    content_converter_adapter = PandocConverterAdapter()
-    content_service = ContentService(content_adapter, content_converter_adapter)
-
-    content_iter = list(content_service.get(doc_urls))
-
-    embedding_size = 1536  # Dimensions of the OpenAIEmbeddings
-    embeddings = OpenAIEmbeddings(openai_api_key=settings.CHAT_SERVICE_TOKEN)
-    vector_index = faiss.IndexFlatL2(embedding_size)
-    vector_storage = FAISS(
-        embeddings.embed_query, vector_index, InMemoryDocstore({}), {}
-    )
-    vector_storage.add_texts(content_iter)
-
-    assistent_adapter = OpenAiAdapater(settings.CHAT_SERVICE_TOKEN, vector_storage)
-    assistent = AssistentService(assistent_adapter)
-
-    while True:
-        question = input("> ")
-        if question.lower() == "q":
-            break
-        response = assistent.prompt(question)
-        print(response)
+    # fetch_documents()
+    # run_terminal()
+    run_discord()
