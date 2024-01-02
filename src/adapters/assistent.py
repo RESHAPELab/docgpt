@@ -1,4 +1,4 @@
-from typing import Type, TypeAlias
+from typing import TypeAlias
 
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
@@ -55,8 +55,6 @@ class OpenAiAdapater(AssistentPort):
 
         return PromptTemplate(input_variables=["history", "input"], template=template)
 
-        
-
     def prompt(self, message: Message) -> Message:
         docs = self._retriever.get_relevant_documents(message)
 
@@ -65,4 +63,4 @@ class OpenAiAdapater(AssistentPort):
             doc.page_content for doc in reordering.transform_documents(docs)
         ]
 
-        return self._llm.run(input_documents=  input=message)
+        return self._llm.run(input_documents=reordered_docs, input=message)
