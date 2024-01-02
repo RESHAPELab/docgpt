@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-from src.domain.assistent import Message, SessionId
+from src.domain.assistant import Message, SessionId
 
 
-class AssistentPort(ABC):
+class AssistantPort(ABC):
     @abstractmethod
     def clear_history(self, session_id: SessionId) -> None:
         ...

@@ -2,19 +2,20 @@ from pathlib import Path
 
 import pypandoc
 from dependency_injector.wiring import Provide, inject
+from dotenv import load_dotenv
 from langchain.globals import set_debug, set_verbose
 from langchain.vectorstores import VectorStore
 
 from src.app.discord import BOT
 from src.core import containers
 from src.domain.content import Content
-from src.domain.port.assistent import AssistentPort
-from src.domain.port.content import ContentPort
+from src.port.assistant import AssistantPort
+from src.port.content import ContentPort
 
 
 @inject
 def run_terminal(
-    chat: AssistentPort = Provide[containers.Settings.assistant.chat],
+    chat: AssistantPort = Provide[containers.Settings.assistant.chat],
 ):
     while True:
         question = input("-> **Q**: ")
@@ -82,10 +83,11 @@ def fetch_documents(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pypandoc.ensure_pandoc_installed()
 
     application = containers.Settings()
-    application.config.from_yaml("config.yml")
+    application.config.from_yaml("config.yml", envs_required=True, required=True)
     application.core.init_resources()
     application.wire(modules=[__name__, "src.app.discord"])
     set_debug(True)

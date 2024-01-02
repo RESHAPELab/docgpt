@@ -7,7 +7,7 @@ from pydantic import AnyUrl, validate_call
 from tqdm import tqdm
 
 from src.domain.content import Content
-from src.domain.port.content import ContentConverterPort, ContentPort, ConvertionOptions
+from src.port.content import ContentConverterPort, ContentPort, ConvertionOptions
 
 
 class WebPageContentAdapter(ContentPort):

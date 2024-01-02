@@ -5,7 +5,7 @@ from dependency_injector.wiring import Provide, inject
 from langchain.text_splitter import MarkdownTextSplitter
 
 from src.core.containers import Settings
-from src.domain.port.assistent import AssistentPort
+from src.port.assistant import AssistantPort
 
 __all__ = ("BOT",)
 
@@ -28,7 +28,7 @@ async def on_ready():
 async def on_thread_delete(
     thread: discord.Thread,
     *,
-    assistant: AssistentPort = Provide[Settings.assistant.chat],
+    assistant: AssistantPort = Provide[Settings.assistant.chat],
 ):
     if not (thread.owner and BOT.user):
         return
@@ -84,7 +84,7 @@ async def clear_my_threads(ctx: discord.ApplicationContext):
 async def on_message(
     message: discord.Message,
     *,
-    assistant: AssistentPort = Provide[Settings.assistant.chat],
+    assistant: AssistantPort = Provide[Settings.assistant.chat],
 ):
     user = BOT.user
     channel = message.channel

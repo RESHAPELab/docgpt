@@ -7,11 +7,11 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.vectorstores import VectorStore
 
 from src.core.prompts import DEFAULT_PROMPT
-from src.domain.assistent import Message, SessionId
-from src.domain.port.assistent import AssistentPort
+from src.domain.assistant import Message, SessionId
+from src.port.assistant import AssistantPort
 
 
-class ConversationalAssistentAdapter(AssistentPort):
+class ConversationalAssistantAdapter(AssistantPort):
     def __init__(
         self,
         llm: BaseChatModel,

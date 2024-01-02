@@ -12,7 +12,7 @@ from pydantic import AnyUrl, validate_call
 from tqdm import tqdm
 
 from src.domain.content import Content
-from src.domain.port.content import ContentPort
+from src.port.content import ContentPort
 
 __all__ = ("GitCodeContentAdapter",)
 

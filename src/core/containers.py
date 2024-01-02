@@ -15,7 +15,7 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.pgvector import PGVector
 
-from src.adapters.assistent import ConversationalAssistentAdapter
+from src.adapters.assistant import ConversationalAssistantAdapter
 from src.adapters.content import (
     GitCodeContentAdapter,
     GitWikiContentAdapter,
@@ -23,8 +23,8 @@ from src.adapters.content import (
     PandocConverterAdapter,
     WebPageContentAdapter,
 )
-from src.domain.port.assistent import AssistentPort
-from src.domain.port.content import ContentConverterPort, ContentPort
+from src.port.assistant import AssistantPort
+from src.port.content import ContentConverterPort, ContentPort
 
 
 class Core(containers.DeclarativeContainer):
@@ -124,8 +124,8 @@ class AssistantAdapters(containers.DeclarativeContainer):
         memory_key="chat_history",
     )
 
-    chat: Singleton[AssistentPort] = Singleton(
-        ConversationalAssistentAdapter,
+    chat: Singleton[AssistantPort] = Singleton(
+        ConversationalAssistantAdapter,
         llm=ai.llm,
         storage=storage.vector_storage,
         memory_factory=memory.provider,
@@ -138,7 +138,7 @@ class AssistantAdapters(containers.DeclarativeContainer):
 
 class Apps(containers.DeclarativeContainer):
     config = providers.Configuration()
-    assistent = providers.DependenciesContainer()
+    assistant = providers.DependenciesContainer()
 
     discord_token = config.discord.token
 
@@ -152,8 +152,8 @@ class Settings(containers.DeclarativeContainer):
     content = providers.Container(ContentAdapters, config=config.content, core=core)
     assistant = providers.Container(
         AssistantAdapters,
-        config=config.assistent,
+        config=config.assistant,
         ai=ai,
         storage=storage,
     )
-    app = providers.Container(Apps, config=config.app, assistent=assistant)
+    app = providers.Container(Apps, config=config.app, assistant=assistant)
