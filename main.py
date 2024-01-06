@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain.globals import set_debug, set_verbose
 from langchain.vectorstores import VectorStore
 
+from src.app.api import create_app, run_app
 from src.app.discord import BOT
 from src.core import containers
 from src.domain.content import Content
@@ -29,7 +30,6 @@ def run_terminal(
 
 @inject
 def run_discord(
-    *,
     token: str = Provide[containers.Settings.app.discord_token],
 ):
     BOT.run(token)
@@ -82,6 +82,15 @@ def fetch_documents(
     add_documents(code_docs)  # type: ignore
 
 
+@inject
+def run_api(
+    settings: containers.Settings = Provide[containers.Settings],
+    port: int = Provide[containers.Settings.api.port],
+) -> None:
+    app = create_app(settings)
+    run_app(app, port)
+
+
 if __name__ == "__main__":
     load_dotenv()
     pypandoc.ensure_pandoc_installed()
@@ -94,5 +103,5 @@ if __name__ == "__main__":
     set_verbose(True)
 
     # fetch_documents()
-    # run_terminal()
-    run_discord()
+    # run_discord()
+    run_api()

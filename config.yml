@@ -35,4 +35,6 @@ storage:
 app:
   discord:
     token: ${APP_DISCORD_TOKEN}
-    
+
+api:
+  port: ${API_PORT:8000}
