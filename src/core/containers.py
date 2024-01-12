@@ -5,7 +5,7 @@ from dependency_injector import containers, providers
 from dependency_injector.providers import Factory, Singleton
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
-from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceBgeEmbeddings
 from langchain.memory import ConversationBufferMemory, MongoDBChatMessageHistory
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseChatMessageHistory
@@ -14,6 +14,7 @@ from langchain.text_splitter import TextSplitter
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.pgvector import PGVector
+from langchain_openai import OpenAIEmbeddings
 
 from src.adapters.assistant import ConversationalAssistantAdapter
 from src.adapters.content import (
@@ -136,11 +137,17 @@ class AssistantAdapters(containers.DeclarativeContainer):
     )
 
 
-class Apps(containers.DeclarativeContainer):
+class Integrations(containers.DeclarativeContainer):
     config = providers.Configuration()
     assistant = providers.DependenciesContainer()
 
     discord_token = config.discord.token
+
+
+class Api(containers.DeclarativeContainer):
+    config = providers.Configuration()
+
+    port = config.port.as_int()
 
 
 class Settings(containers.DeclarativeContainer):
@@ -156,4 +163,5 @@ class Settings(containers.DeclarativeContainer):
         ai=ai,
         storage=storage,
     )
-    app = providers.Container(Apps, config=config.app, assistant=assistant)
+    app = providers.Container(Integrations, config=config.app, assistant=assistant)
+    api = providers.Container(Api, config=config.api)
