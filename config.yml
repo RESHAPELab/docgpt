@@ -21,7 +21,7 @@ ai:
 
 assistant:
   k: ${ASSISTANT_K:100}
-  tokens_limit: ${ASSISTANT_TOKENS_LIMIT:4000}
+  tokens_limit: ${ASSISTANT_TOKENS_LIMIT:2000}
   score_threshold: ${ASSISTANT_SCORE_THRESHOLD:0.9}
   distance_threshold: ${DISTANCE_THRESHOLD:null}
 
