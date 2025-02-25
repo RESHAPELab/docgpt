@@ -55,6 +55,8 @@ services:
       STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
       STORAGE_VECTOR_URL: http://vector_storage:6333
       STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017
+    volumes:
+      - ./.assets:/app/.assets
 
 
 networks:
