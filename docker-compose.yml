@@ -40,6 +40,8 @@ services:
 
   app:
     container_name: app
+    profiles:
+      - self
     depends_on:
       - memory-storage
       - vector-storage
