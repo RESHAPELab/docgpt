@@ -47,6 +47,8 @@ services:
     volumes:
       - ./.docker/ollama:/root/.ollama  # Persist Ollama models and data
     entrypoint: ["/bin/sh", "-c"]
+    environment:
+      OLLAMA_NUM_PARALLEL: 16
     command:
       - |
         ollama serve &  # Start the Ollama server in the background
