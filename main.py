@@ -105,28 +105,33 @@ def fetch_documents(
     assets_path: Path = Provide[containers.Settings.core.assets_path],
 ):
     project = "jabref"
+    
+    code_path = assets_path / project
+    if code_path.exists():
+        code_docs = code.get_by_path(project, assets_path / project)
+    else:
+        code_branch = "main"
+        code_url = "https://github.com/JabRef/jabref.git"
+        code_docs = code.get_by_url(project, code_url, branch=code_branch)
 
-    # code_branch = "main"
-    # code_url = "https://github.com/JabRef/jabref.git"
-    # code_docs = list(code.get_by_url(project, code_url, branch=code_branch))
-    code_docs = code.get_by_path(project, assets_path / project)
+    wiki_path = assets_path / f"{project}.wiki"
+    if wiki_path.exists():
+        wiki_docs = wiki.get_by_path(project, assets_path / f"{project}.wiki")
+    else:
+        wiki_url = "https://docs.jabref.org"
+        wiki_docs = list(web.get_by_url(project, wiki_url, max_deep=2))
+        from pathlib import Path
+        for i, doc in enumerate(wiki_docs):
+            filepath = wiki_path / f"{doc.metadata['id']}.md"
+            print(f"#{i}/{len(wiki_docs)} writing file {filepath.as_posix()}")
+            content = f"source: {doc.metadata['source']}  \n"
+            content += f"title: {doc.metadata['title']}  \n"
+            content += f"description: {doc.metadata.get('description', 'None')}  \n"
+            content += f"id: {doc.metadata['id']}  \n"
+            content += f"\n{doc.page_content}\n"
+            filepath.write_text(content, encoding="utf-8")
 
-    # wiki_url = "https://docs.jabref.org"
-    # wiki_docs = list(web.get_by_url(project, wiki_url, max_deep=2))
-    # from pathlib import Path
-    # for i, doc in enumerate(wiki_docs):
-    #     filepath = path / f"{doc.metadata['id']}.md"
-    #     print(f"#{i}/{len(wiki_docs)} writing file {filepath.as_posix()}")
-    #     content = f"source: {doc.metadata['source']}  \n"
-    #     content += f"title: {doc.metadata['title']}  \n"
-    #     content += f"description: {doc.metadata.get('description', 'None')}  \n"
-    #     content += f"id: {doc.metadata['id']}  \n"
-    #     content += f"\n{doc.page_content}\n"
-    #     filepath.write_text(content, encoding="utf-8")
-
-    wiki_docs = wiki.get_by_path(project, assets_path / f"{project}.wiki")
-
-    # add_documents(list(wiki_docs))  # type: ignore
+    add_documents(list(wiki_docs))  # type: ignore
     add_documents(list(code_docs))  # type: ignore
 
 
