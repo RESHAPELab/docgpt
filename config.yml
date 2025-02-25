@@ -19,6 +19,8 @@ ai:
     embedding_model_name: ${AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
     model_name: ${AI_OPENAI_MODEL:gpt-3.5-turbo}
     api_key:  ${AI_OPENAI_APIKEY}
+  ollama:
+    base_url: ${AI_OLLAMA_BASE_URL:http://localhost:11434}
 
 assistant:
   k: ${ASSISTANT_K:100}

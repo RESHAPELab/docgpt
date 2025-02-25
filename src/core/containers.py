@@ -6,7 +6,7 @@ from dependency_injector import containers, providers
 from dependency_injector.providers import Factory, Singleton
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings, OllamaEmbeddings
 from langchain_community.chat_message_histories import MongoDBChatMessageHistory
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
@@ -69,7 +69,13 @@ class AI(containers.DeclarativeContainer):
         encode_kwargs={"normalize_embeddings": True},
     )
 
-    embeddings: Singleton[Embeddings] = openai_embedding
+    ollama_embedding: Singleton[Embeddings] = Singleton(
+        OllamaEmbeddings,
+        base_url=config.ollama.base_url,
+        model="nomic-embed-text"
+    )
+
+    embeddings: Singleton[Embeddings] = ollama_embedding
 
 
 class StorageAdapters(containers.DeclarativeContainer):
@@ -92,7 +98,7 @@ class StorageAdapters(containers.DeclarativeContainer):
     qdrant: Singleton[VectorStore] = Singleton(
         QdrantVectorStore.from_existing_collection,
         url=config.vector.url,
-        timeout=config.vector.timeout.as_int(),
+        timeout=config.vector.timeout,
         collection_name=config.vector.collection_name,
         embedding=ai.embeddings,
         # retrieval_mode=RetrievalMode.HYBRID,

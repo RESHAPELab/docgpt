@@ -3,7 +3,7 @@ from typing import Iterable
 
 from git import Repo
 from langchain.docstore.document import Document
-from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import DirectoryLoader, UnstructuredMarkdownLoader
 from langchain.text_splitter import TextSplitter
 from pydantic import AnyUrl, validate_call
 
@@ -24,6 +24,8 @@ class GitWikiContentAdapter(ContentPort):
     def _get_docs(self, path: Path) -> Iterable[Document]:
         loader = DirectoryLoader(
             path.absolute().as_posix(),
+            silent_errors=True,
+            loader_cls=UnstructuredMarkdownLoader,
             show_progress=True,
             use_multithreading=True,
         )
