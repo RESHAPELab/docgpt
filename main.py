@@ -1,5 +1,6 @@
 import multiprocessing
 from pathlib import Path
+from time import sleep
 
 import pypandoc
 from dependency_injector.wiring import Provide, inject
@@ -41,7 +42,6 @@ def add_documents(
     storage: VectorStore = Provide[containers.Settings.storage.vector_storage],
 ) -> None:
     fails_count = 0
-
     for doc in documents:
         try:
             storage.add_documents([doc])
@@ -56,26 +56,18 @@ def add_documents(
 @inject
 def fetch_documents(
     code: ContentPort = Provide[containers.Settings.content.git_code],
-    wiki: ContentPort = Provide[containers.Settings.content.git_wiki],
-    assets_path: Path = Provide[containers.Settings.core.assets_path],
+    # wiki: ContentPort = Provide[containers.Settings.content.git_wiki],
+    web: ContentPort = Provide[containers.Settings.content.web],
+    # assets_path: Path = Provide[containers.Settings.core.assets_path],
 ):
-    project = "pdf.js"
+    project = "jabref"
 
-    code_url = f"ssh://git@github.com/mozilla/{project}.git"
-    code_path = assets_path.joinpath(project)
+    code_branch = "main"
+    code_url = "https://github.com/JabRef/jabref.git"
+    code_docs = code.get_by_url(project, code_url, branch=code_branch)
 
-    wiki_url = f"ssh://git@github.com/mozilla/{project}.wiki.git"
-    wiki_path = assets_path.joinpath(project + ".wiki")
-
-    if code_path.exists():
-        code_docs = code.get_by_path(project, code_path, branch="master")
-    else:
-        code_docs = code.get_by_url(project, code_url, branch="master")
-
-    if wiki_path.exists():
-        wiki_docs = wiki.get_by_path(project, wiki_path)
-    else:
-        wiki_docs = wiki.get_by_url(project, wiki_url)
+    wiki_url = "https://docs.jabref.org"
+    wiki_docs = web.get_by_url(project, wiki_url, max_deep=2)
 
     add_documents(wiki_docs)  # type: ignore
     add_documents(code_docs)  # type: ignore
@@ -101,26 +93,25 @@ def load_settings() -> containers.Settings:
 
 
 if __name__ == "__main__":
-    # load_dotenv()
-    # pypandoc.ensure_pandoc_installed()
+    load_dotenv()
+    pypandoc.ensure_pandoc_installed()
 
-    # application = containers.Settings()
-    # application.config.from_yaml("config.yml", envs_required=True, required=True)
-    # application.core.init_resources()
-    # application.wire(modules=[__name__, "src.app.discord"])
-    # set_debug(True)
-    # set_verbose(True)
+    application = containers.Settings()
+    application.config.from_yaml("config.yml", envs_required=True, required=True)
+    application.core.init_resources()
+    application.wire(modules=[__name__, "src.app.discord"])
+    set_debug(True)
+    set_verbose(True)
 
-    # fetch_documents()
+    fetch_documents()
 
-    api_process = multiprocessing.Process(target=run_api)
-    discord_process = multiprocessing.Process(target=run_discord)
+    # api_process = multiprocessing.Process(target=run_api)
+    # discord_process = multiprocessing.Process(target=run_discord)
 
-    api_process.start()
-    discord_process.start()
+    # api_process.start()
+    # discord_process.start()
 
-    api_process.join()
-    discord_process.join()
+    # api_process.join()
+    # discord_process.join()
 
-    # run_discord()
-    # run_api()
+    run_terminal()

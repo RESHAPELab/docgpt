@@ -19,10 +19,12 @@ services:
       - ./.docker/vector_storage_loader/add_snapshots.sh:/app/add_snapshots.sh:ro  # Mount script
     environment:
       VECTOR_STORAGE_HOST: vector_storage
+      PROJECT_COLLECTION: jabref
+      PROJECT_COLLECTION_VECTOR_SIZE: 1536
+      PROJECT_COLLECTION_VECTOR_DISTANCE: Cosine
     depends_on:
       - vector-storage
     entrypoint: ["/bin/sh", "/app/add_snapshots.sh"]
-
 
   memory-storage:
     image: mongo
@@ -36,20 +38,25 @@ services:
     volumes:
       - ./.docker/memory_storage/db:/data/db
 
-  app:
-    container_name: app
-    depends_on:
-      - memory-storage
-      - vector-storage
-    restart: unless-stopped
-    build:
-      context: .
-      dockerfile: ./.docker/app/Dockerfile
-    env_file: .env
-    ports:
-      - "8000:8000"
-    environment:
-      API_PORT: 8000
-      STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
-      STORAGE_VECTOR_URL: http://vector_storage:6333
-      STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017
+  # app:
+  #   container_name: app
+  #   depends_on:
+  #     - memory-storage
+  #     - vector-storage
+  #   restart: unless-stopped
+  #   build:
+  #     context: .
+  #     dockerfile: ./.docker/app/Dockerfile
+  #   env_file: .env
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     API_PORT: 8000
+  #     STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
+  #     STORAGE_VECTOR_URL: http://vector_storage:6333
+  #     STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017
+
+
+networks:
+  default:
+    name: docgpt-network
