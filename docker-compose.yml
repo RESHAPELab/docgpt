@@ -38,6 +38,22 @@ services:
     volumes:
       - ./.docker/memory_storage/db:/data/db
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: docgpt_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./.docker/ollama:/root/.ollama  # Persist Ollama models and data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &  # Start the Ollama server in the background
+        sleep 5 &&      # Give the server a moment to start
+        ollama pull nomic-embed-text &&  # Pull the nomic-embed-text model
+        wait            # Keep the container running
+
   app:
     container_name: app
     profiles:
@@ -45,6 +61,7 @@ services:
     depends_on:
       - memory-storage
       - vector-storage
+      - ollama
     restart: unless-stopped
     build:
       context: .
@@ -57,6 +74,7 @@ services:
       STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
       STORAGE_VECTOR_URL: http://vector_storage:6333
       STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017
+      AI_OLLAMA_BASE_URL: http://docgpt_ollama:11434
     volumes:
       - ./.assets:/app/.assets
 

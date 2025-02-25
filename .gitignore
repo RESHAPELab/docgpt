@@ -205,6 +205,8 @@ pandoc*
 /.docker/vector_storage/storage/
 /.docker/memory_storage/db/
 /.docker/vector_storage_loader/
+/.docker/ollama/
+!/.docker/ollama/.gitkeep
 !/.docker/vector_storage_loader/storage/.gitkeep
 !/.docker/memory_storage/db/.gitkeep
 
