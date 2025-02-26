@@ -54,6 +54,7 @@ services:
         ollama serve &  # Start the Ollama server in the background
         sleep 5 &&      # Give the server a moment to start
         ollama pull nomic-embed-text &&  # Pull the nomic-embed-text model
+        ollama pull llama2 && # Pull the llama2 model
         wait            # Keep the container running
 
   app:

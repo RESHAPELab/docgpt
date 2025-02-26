@@ -5,6 +5,7 @@ from re import search
 from dependency_injector import containers, providers
 from dependency_injector.providers import Factory, Singleton
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.base import BaseChatModel
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings, OllamaEmbeddings
 from langchain_community.chat_message_histories import MongoDBChatMessageHistory
@@ -18,6 +19,7 @@ from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
+from openai import base_url
 
 from src.adapters.assistant import ConversationalAssistantAdapter
 from src.adapters.content import (
@@ -45,7 +47,7 @@ class Core(containers.DeclarativeContainer):
 class AI(containers.DeclarativeContainer):
     config = providers.Configuration()
 
-    llm: Singleton[BaseChatModel] = Singleton(
+    openai_llm: Singleton[BaseChatModel] = Singleton(
         ChatOpenAI,
         model_name=config.openai.model_name,
         openai_api_key=config.openai.api_key,
@@ -69,12 +71,19 @@ class AI(containers.DeclarativeContainer):
         encode_kwargs={"normalize_embeddings": True},
     )
 
+    ollama_llm: Singleton[BaseChatModel] = Singleton(
+        ChatOllama,
+        base_url=config.ollama.base_url,
+        model="llama2"
+    )
+
     ollama_embedding: Singleton[Embeddings] = Singleton(
         OllamaEmbeddings,
         base_url=config.ollama.base_url,
         model="nomic-embed-text"
     )
 
+    llm: Singleton[BaseChatModel] = ollama_llm
     embeddings: Singleton[Embeddings] = ollama_embedding
 
 
