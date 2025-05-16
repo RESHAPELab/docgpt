@@ -1,12 +1,12 @@
 import multiprocessing as mp
 import os
 from pathlib import Path
-from typing import AnyStr, Callable, Iterable, Iterator, TypeAlias
+from typing import Callable, Iterable, Iterator, TypeAlias
 
 from git import Repo
 from git.objects import Blob, Submodule, Tree
-from langchain.docstore.document import Document
-from langchain.document_loaders.git import GitLoader as BaseGitLoader
+from langchain_community.docstore.document import Document
+from langchain_community.document_loaders.git import GitLoader as BaseGitLoader
 from langchain.text_splitter import TextSplitter
 from pydantic import AnyUrl, validate_call
 from tqdm import tqdm

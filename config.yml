@@ -16,18 +16,23 @@ core:
 
 ai:
   openai:
+    embedding_model_name: ${AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
     model_name: ${AI_OPENAI_MODEL:gpt-3.5-turbo}
     api_key:  ${AI_OPENAI_APIKEY}
+  ollama:
+    base_url: ${AI_OLLAMA_BASE_URL:http://localhost:11434}
 
 assistant:
   k: ${ASSISTANT_K:100}
   tokens_limit: ${ASSISTANT_TOKENS_LIMIT:2000}
-  score_threshold: ${ASSISTANT_SCORE_THRESHOLD:0.9}
+  score_threshold: ${ASSISTANT_SCORE_THRESHOLD:0.01}
   distance_threshold: ${DISTANCE_THRESHOLD:null}
 
 storage:
     vector:
-      url: ${STORAGE_VECTOR_URL:postgresql://root:example@localhost:5432/postgres}
+      url: ${STORAGE_VECTOR_URL:http://localhost:6333}
+      collection_name: ${STORAGE_VECTOR_COLLECTION_NAME:my_collection}
+      timeout: ${STORAGE_VECTOR_TIMEOUT:60}
       pre_delete_collection: false
     memory:
       url: ${STORAGE_MEMORY_URL:mongodb://root:example@localhost:27017}

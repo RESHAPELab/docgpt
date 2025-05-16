@@ -1,7 +1,8 @@
 from functools import lru_cache
+from typing import Any
 
 from dependency_injector.providers import Factory
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.vectorstores import VectorStore
@@ -18,19 +19,18 @@ class ConversationalAssistantAdapter(AssistantPort):
         storage: VectorStore,
         memory_factory: Factory[BaseChatMemory],
         *,
-        k: int = 100,
+        search_kwargs: dict[str, Any] | None = None,
         tokens_limit: int = 4_000,
-        score_threshold: float | None = 0.9,
-        distance_threshold: float | None = None,
     ) -> None:
         self._llm = llm
 
         self._storage = storage
         self._memory_factory = memory_factory
-        self._k = k
         self._tokens_limit = tokens_limit
-        self._score_threshold = score_threshold
-        self._distance_threshold = distance_threshold
+        self._search_kwargs = search_kwargs
+        for k, v in self._search_kwargs.items():
+            if v is None:
+                del self._search_kwargs[k]
 
     @lru_cache
     def _get_memory(self, session_id: SessionId) -> BaseChatMemory:
@@ -42,17 +42,14 @@ class ConversationalAssistantAdapter(AssistantPort):
     def prompt(self, message: Message, *, session_id: SessionId | None = None) -> str:
         memory = self._get_memory(session_id) if session_id else None
 
+        retriever = self._storage.as_retriever(
+            search_type="similarity", search_kwargs=self._search_kwargs or None
+        )
+
         qa = ConversationalRetrievalChain.from_llm(
             llm=self._llm,
             condense_question_prompt=DEFAULT_PROMPT,
-            retriever=self._storage.as_retriever(
-                search_type="similarity",
-                search_kwargs=dict(
-                    k=self._k,
-                    score_threshold=self._score_threshold,
-                    distance_threshold=self._distance_threshold,
-                ),
-            ),
+            retriever=retriever,
             get_chat_history=lambda v: v,
             memory=memory,
             verbose=True,
@@ -62,6 +59,9 @@ class ConversationalAssistantAdapter(AssistantPort):
         qa_params = dict(question=message)
         if not memory:
             qa_params["chat_history"] = ""
+
+        # docs: list[Document] = retriever.get_relevant_documents(message)
+        # qa_params["context"] = "\n\n".join(doc.page_content for doc in docs)
 
         response = qa(qa_params)
         return response["answer"]

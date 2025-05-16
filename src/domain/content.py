@@ -1,8 +1,7 @@
 from typing import TypeAlias
 from uuid import uuid4
 
-from langchain.load.serializable import Serializable
-from langchain.pydantic_v1 import UUID4, BaseModel
+from pydantic import UUID4, BaseModel
 from langchain.schema import Document as _LangchainDocument
 
 
@@ -14,14 +13,14 @@ class Content(_LangchainDocument):
         *,
         project: str,
         source: str,
-        id: UUID4 | None = None,
+        id_: UUID4 | None = None,
     ) -> "Content":
         document_dict = document.dict()
         document_dict["metadata"].update(
             {
                 "project": project,
                 "source": source,
-                "id": id or uuid4().hex,
+                "id": id_ or uuid4().hex,
             }
         )
         return cls.parse_obj(document_dict)

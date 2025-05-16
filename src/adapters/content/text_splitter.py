@@ -148,9 +148,11 @@ class LangSplitterByMetadata(TextSplitter):
         self._load_splitters()
 
     def _load_splitters(self) -> None:
-        self._splitter_map = {
-            lang: self._get_lang_splitter(lang) for lang in list(Language)
-        }
+        self._splitter_map = {}
+        for lang in list(Language):
+            splitter = self._get_lang_splitter(lang)
+            if splitter:
+                self._splitter_map[lang] = splitter
 
         self._default_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self._chunk_size,
@@ -161,13 +163,16 @@ class LangSplitterByMetadata(TextSplitter):
             strip_whitespace=self._strip_whitespace,
         )
 
-    def _get_lang_splitter(self, language: Language) -> TextSplitter:
-        return RecursiveCharacterTextSplitter.from_language(
-            language,
-            chunk_size=self._chunk_size,
-            chunk_overlap=self._chunk_overlap,
-            length_function=self._length_function,
-            keep_separator=self._keep_separator,
-            add_start_index=self._add_start_index,
-            strip_whitespace=self._strip_whitespace,
-        )
+    def _get_lang_splitter(self, language: Language) -> TextSplitter | None:
+        try:
+            return RecursiveCharacterTextSplitter.from_language(
+                language,
+                chunk_size=self._chunk_size,
+                chunk_overlap=self._chunk_overlap,
+                length_function=self._length_function,
+                keep_separator=self._keep_separator,
+                add_start_index=self._add_start_index,
+                strip_whitespace=self._strip_whitespace,
+            )
+        except ValueError:
+            return None

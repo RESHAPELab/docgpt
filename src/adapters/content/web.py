@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Iterable
 
-from langchain.document_loaders import RecursiveUrlLoader
+from langchain_community.document_loaders import RecursiveUrlLoader
 from langchain.text_splitter import MarkdownTextSplitter
 from pydantic import AnyUrl, validate_call
 from tqdm import tqdm

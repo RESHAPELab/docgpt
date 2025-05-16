@@ -46,6 +46,11 @@ async def help_me(ctx: discord.ApplicationContext):
         if not isinstance(channel, discord.TextChannel):
             raise ValueError("Command origin not from a text channel")
 
+        has_permissions = channel.permissions_for(ctx.me).create_private_threads
+        if not has_permissions:
+            await ctx.message.reply("I don't have permissions create private threads.")
+            return
+
         thread = await channel.create_thread(
             name=NEW_THREAD_NAME,
             type=discord.ChannelType.private_thread,

@@ -1,26 +1,87 @@
-version: '3'
-
 services:
-  vector_storage:
-    image: ankane/pgvector
+  vector-storage:
+    image: qdrant/qdrant:latest
     container_name: vector_storage
-    restart: always
+    restart: unless-stopped
     ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=example
-      - POSTGRES_DB=postgres
-
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - .docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./.docker/vector_storage/storage:/qdrant/storage
 
-  memory_storage:
+  vector-storage-loader:
+    image: alpine:latest
+    profiles:
+      - loader
+    container_name: vector_storage_loader
+    volumes:
+      - ./.docker/vector_storage_loader/snapshots:/snapshots  # Mount snapshot folder
+      - ./.docker/vector_storage_loader/add_snapshots.sh:/app/add_snapshots.sh:ro  # Mount script
+    environment:
+      VECTOR_STORAGE_HOST: vector_storage
+      PROJECT_COLLECTION: jabref
+      PROJECT_COLLECTION_VECTOR_SIZE: 768 # nomic dimension, for openai use 1536
+      PROJECT_COLLECTION_VECTOR_DISTANCE: Cosine
+    depends_on:
+      - vector-storage
+    entrypoint: ["/bin/sh", "/app/add_snapshots.sh"]
+
+  memory-storage:
     image: mongo
     container_name: memory_storage
-    restart: always
+    restart: unless-stopped
     ports:
-      - 27017:27017
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./.docker/memory_storage/db:/data/db
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: docgpt_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./.docker/ollama:/root/.ollama  # Persist Ollama models and data
+    entrypoint: ["/bin/sh", "-c"]
+    environment:
+      OLLAMA_NUM_PARALLEL: 16
+    command:
+      - |
+        ollama serve &  # Start the Ollama server in the background
+        sleep 5 &&      # Give the server a moment to start
+        ollama pull nomic-embed-text &&  # Pull the nomic-embed-text model
+        ollama pull llama2 && # Pull the llama2 model
+        wait            # Keep the container running
+
+  app:
+    container_name: app
+    profiles:
+      - self
+    depends_on:
+      - memory-storage
+      - vector-storage
+      - ollama
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./.docker/app/Dockerfile
+    env_file: .env
+    ports:
+      - "8000:8000"
+    environment:
+      API_PORT: 8000
+      STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
+      STORAGE_VECTOR_URL: http://vector_storage:6333
+      STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017
+      AI_OLLAMA_BASE_URL: http://docgpt_ollama:11434
+    volumes:
+      - ./.assets:/app/.assets
+
+
+networks:
+  default:
+    name: docgpt-network

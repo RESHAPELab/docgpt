@@ -1,20 +1,25 @@
 import logging.config
 from pathlib import Path
+from re import search
 
 from dependency_injector import containers, providers
 from dependency_injector.providers import Factory, Singleton
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.ollama import ChatOllama
 from langchain.chat_models.base import BaseChatModel
-from langchain.embeddings import HuggingFaceBgeEmbeddings
-from langchain.memory import ConversationBufferMemory, MongoDBChatMessageHistory
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings, OllamaEmbeddings
+from langchain_community.chat_message_histories import MongoDBChatMessageHistory
+from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseChatMessageHistory
 from langchain.schema.embeddings import Embeddings
 from langchain.text_splitter import TextSplitter
-from langchain.vectorstores import VectorStore
-from langchain.vectorstores.chroma import Chroma
-from langchain.vectorstores.pgvector import PGVector
+from langchain_community.vectorstores import VectorStore
+from langchain_community.vectorstores.chroma import Chroma
+from langchain_community.vectorstores.pgvector import PGVector
+from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
+from openai import base_url
 
 from src.adapters.assistant import ConversationalAssistantAdapter
 from src.adapters.content import (
@@ -42,7 +47,7 @@ class Core(containers.DeclarativeContainer):
 class AI(containers.DeclarativeContainer):
     config = providers.Configuration()
 
-    llm: Singleton[BaseChatModel] = Singleton(
+    openai_llm: Singleton[BaseChatModel] = Singleton(
         ChatOpenAI,
         model_name=config.openai.model_name,
         openai_api_key=config.openai.api_key,
@@ -51,6 +56,7 @@ class AI(containers.DeclarativeContainer):
 
     openai_embedding: Singleton[Embeddings] = Singleton(
         OpenAIEmbeddings,
+        model=config.openai.embedding_model_name,
         openai_api_key=config.openai.api_key,
         openai_api_version=config.openai.api_version,
         openai_api_base=config.openai.api_base,
@@ -65,7 +71,20 @@ class AI(containers.DeclarativeContainer):
         encode_kwargs={"normalize_embeddings": True},
     )
 
-    embeddings: Singleton[Embeddings] = openai_embedding
+    ollama_llm: Singleton[BaseChatModel] = Singleton(
+        ChatOllama,
+        base_url=config.ollama.base_url,
+        model="llama2"
+    )
+
+    ollama_embedding: Singleton[Embeddings] = Singleton(
+        OllamaEmbeddings,
+        base_url=config.ollama.base_url,
+        model="nomic-embed-text"
+    )
+
+    llm: Singleton[BaseChatModel] = ollama_llm
+    embeddings: Singleton[Embeddings] = ollama_embedding
 
 
 class StorageAdapters(containers.DeclarativeContainer):
@@ -85,7 +104,16 @@ class StorageAdapters(containers.DeclarativeContainer):
         persist_directory=".localstorage",
     )
 
-    vector_storage: Singleton[VectorStore] = pg_vector
+    qdrant: Singleton[VectorStore] = Singleton(
+        QdrantVectorStore.from_existing_collection,
+        url=config.vector.url,
+        timeout=config.vector.timeout,
+        collection_name=config.vector.collection_name,
+        embedding=ai.embeddings,
+        # retrieval_mode=RetrievalMode.HYBRID,
+    )
+
+    vector_storage: Singleton[VectorStore] = qdrant
 
     memory_factory: providers.Factory[BaseChatMessageHistory] = providers.Factory(
         MongoDBChatMessageHistory,
@@ -130,10 +158,12 @@ class AssistantAdapters(containers.DeclarativeContainer):
         llm=ai.llm,
         storage=storage.vector_storage,
         memory_factory=memory.provider,
-        k=config.k,
         tokens_limit=config.tokens_limit.as_int(),
-        score_threshold=config.score_threshold,
-        distance_threshold=config.distance_threshold,
+        search_kwargs=providers.Dict(
+            k=config.k.as_int(),
+            score_threshold=config.score_threshold.as_float(),
+            # distance_threshold=config.distance_threshold,
+        ),
     )
 
 

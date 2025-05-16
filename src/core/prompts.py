@@ -12,6 +12,7 @@ Search tirelessly for it until it proves not to exist!
 
 Chat History:
 {chat_history}
+
 Follow Up Input: {question}
 Standalone question:"""
 DEFAULT_PROMPT = PromptTemplate.from_template(_template)
